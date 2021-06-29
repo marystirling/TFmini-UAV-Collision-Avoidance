@@ -43,7 +43,7 @@ while not end:
         print('{},{}'.format(theta,phi))
     except ValueError:
         theta = 1000
-        print(1000)
+        #print(1000)
     # print("theta: ", theta)
     # print("phi: ", phi)
     #print('{},{}'.format(theta,phi))
@@ -51,5 +51,5 @@ while not end:
 
     # print(phi)
     break
-    sleep(3)
+    #sleep(3)
     
