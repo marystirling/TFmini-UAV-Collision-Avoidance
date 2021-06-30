@@ -8,8 +8,26 @@ Author: Amy McGovern
 
 from pyparrot.Bebop import Bebop
 
+
+#def myFlight(option):
+ #   landing = "land"
+  #  fly = "fly"
+   # if(option == landing):
+    #    print("bebop.emergency_landing")
+   # elif(option == fly):
+        #some code that does nothing
+    #    print("NULL")
+    
+    
+
+#flightChoice = input("What would you like to do: ")
+#flightChoiceChecker = myFlight(flightChoice)
+
+
 # creating the bebop object
 bebop = Bebop(drone_type="Bebop2")
+
+
 
 # connects to drone with connect(num_retries)
 print("connecting")
@@ -29,6 +47,8 @@ if (success):
     bebop.safe_takeoff(10)
     
     bebop.set_max_altitude(0.5)
+    
+    bebop.emergency_land()
 
     # set safe indoor parameters
     # set max tilt in degrees for drone between 5 (very slow) and 30 (really fast) degrees

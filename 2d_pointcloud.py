@@ -17,17 +17,31 @@ accel = adafruit_lsm303_accel.LSM303_Accel(i2c)
 
 # creates a list
 list = []
+marginDist = 20
 
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
+#fig = plt.figure()
+#ax = fig.add_subplot(projection='2d')
 
-ax.set_xlabel('x-axis')
-ax.set_ylabel('y-axis')
-ax.set_zlabel('z-axis')
+#ax.set_xlabel('x-axis')
+#ax.set_ylabel('y-axis')
+#ax.set_zlabel('z-axis')
+
+def line_edge(coordinateList):
+    j = 0
+    while j < len(coordinateList) - 1:
+    #for i in coordinateList:
+        #if j < len(coordinateList) - 1:
+        dist = distBetweenPoints(coordinateList[j], coordinateList[j+1])
+        print(dist)
+        if dist < marginDist:
+            print("too close")
+            plt.scatter
+        j = j + 1
+    
 
 # calculates the distance between two tuples (including the coordinates of the front of the UAV if want)
 def distBetweenPoints(tuple1, tuple2):
-    distance_between_points = math.sqrt(pow(tuple2[0]-tuple1[0],2) + pow(tuple2[1]-tuple1[1],2) + pow(tuple2[2]-tuple1[2],2))
+    distance_between_points = math.sqrt(pow(tuple2[0]-tuple1[0],2) + pow(tuple2[1]-tuple1[1],2))
     #print(tuple1, "&", tuple2, ": ", distance_between_points)
     return distance_between_points
 
@@ -37,8 +51,7 @@ def droneLocation(dist):
     theta, phi = accelData()
     x = dist * math.cos((math.pi/2)-phi)
     y = dist * math.sin((math.pi/2) - phi)
-    z = dist * math.sin(theta)
-    droneTuple = (x, y, z)
+    droneTuple = (x, y)
     #print(droneTuple)
     return droneTuple
 
@@ -46,16 +59,15 @@ def droneLocation(dist):
 def calculateCoordinates(dist, theta, phi):
     x = dist * math.cos((math.pi/2)-phi)
     y = dist * math.sin((math.pi/2) - phi)
-    z = dist * math.sin(theta)
-    tuple = (x, y, z)
+    tuple = (x, y)
     #print(tuple)
     # adds each tuple (aka coordinates) to the list
     list.append(tuple)
 
 # plots Cartesian coordinates in matplotlib 3D scatterplot to visualize point cloud
 def plotPoints(list):
-    x, y, z = zip(*list)
-    ax.scatter(x, y, z, marker='o', s=5)
+    x, y = zip(*list)
+    plt.scatter(x, y, marker='o', s=5)
     plt.savefig('3d_plot.png')
     plt.show()
 
@@ -80,7 +92,7 @@ def accelData():
    
    
 # i is the number of the data points to capture for point cloud
-i = 500
+i = 10
 j=0
 
 
@@ -114,10 +126,13 @@ while i > 0:
 droneTuple = droneLocation(5)
 
 # way to iterate through list to compare the distances of it to the front of the UAV
-for i in list:
-    distBetweenPoints(droneTuple, i)
+#for i in list:
+  #  distBetweenPoints(droneTuple, i)
+  
+line_edge(list)
 
 # plots the points by passing in the list of tuples of coordinates
 plotPoints(list)
 
 file.close()                         
+

@@ -8,7 +8,7 @@ import adafruit_lsm303dlh_mag
 import math
 #import numpy as np
 
-#from pynput import keyboard
+from pynput import keyboard
 
 i2c = busio.I2C(board.SCL, board.SDA)
 mag = adafruit_lsm303dlh_mag.LSM303DLH_Mag(i2c)
