@@ -1,3 +1,9 @@
+# imports from ps_drone
+import time, sys
+import ps_drone                                                   
+from time import sleep
+import signal
+
 import os
 import sys
 import math
@@ -5,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 # import csv 
 
+# from accelerometer
 from time import sleep
 import board
 import busio
@@ -31,7 +38,7 @@ marginDist = 20
 
 
 
-currdist = dist
+#currdist = dist
 # if(currdist < tooClose):
     #return True
 def distTooClose():
@@ -61,8 +68,8 @@ def distBetweenPoints(tuple1, tuple2):
 
 
 # calculates the location of the UAV coordinate by passing in the distance from the lidar to the front of the UAV
-def droneLocation(dist):
-    theta, phi = accelData()
+def droneLocation(dist, mag_x, mag_y, mag_z):
+    theta, phi = accelData(mag_x, mag_y, mag_z)
     x = dist * math.cos((math.pi/2)-phi)
     y = dist * math.sin((math.pi/2) - phi)
     droneTuple = (x, y)
@@ -85,15 +92,37 @@ def plotPoints(list):
     plt.savefig('3d_plot.png')
     plt.show()
 
+numbers = []
+def magData(magnetometerData):
+   #distSplit = distanceStr.split("\n")[0]
+    print("mag data: ", magnetometerData)
+    magnetometerData = magnetometerData[1:-1]
+    print(magnetometerData)
+    x, y, z = magnetometerData.split(', ')
+    print(x, y, z)
+    return x, y, z
+    
+   #for t in magnetometerData.split():
+    #    try:
+     #       numbers.append(float(t))
+      #      print("mag data pt 2: ", t)
+       # except ValueError:
+        #    pass
+
+
 # uses measurements of the acceleration and magnetometers arrays to return the values of theta and phi
-def accelData():
+def accelData(mag_x, mag_y, mag_z):
     accel_x = accel.acceleration[0]
     accel_y = accel.acceleration[1]
     accel_z = accel.acceleration[2]
     
-    mag_x = mag.magnetic[0]
-    mag_y = mag.magnetic[1]
-    mag_z = mag.magnetic[2]
+    mag_x = float(mag_x)
+    mag_y = float(mag_y)
+    mag_z = float(mag_z)
+    
+    #mag_x = mag.magnetic[0]
+    #mag_y = mag.magnetic[1]
+    #mag_z = mag.magnetic[2]
        
     # exception handling to make sure that valid theta and phi arguments are given
     try:
@@ -103,10 +132,42 @@ def accelData():
             
     except ValueError:
         return 0, 0
+
+# function for emergency drone shutdown (press Ctrl and \ at same time) - must do it in terminal
+def exit_gracefully(signal, frame):
+    print("Shutting down")
+    drone.shutdown()
+
+signal.signal(signal.SIGQUIT, exit_gracefully)
+
+
+
+
+  
+
+print("Initializing")
+drone = ps_drone.Drone()       # Initializes the PS-Drone-API
+print("Starting")
+drone.startup()                # Connects to the drone and starts subprocesses
+print("Resetting")
+drone.reset()
+while drone.getBattery()[0] == -1:	time.sleep(0.1)		# Waits until the drone has done its reset
+print ("Battery: "+str(drone.getBattery()[0])+"%  "+str(drone.getBattery()[1])) # Gives a battery-status
+drone.useDemoMode(False)                                                      # Give me everything...fast
+drone.getNDpackage(["demo","pressure_raw","altitude","magneto","wifi","wind_speed","euler_angles"])       # Packets, which shall be decoded
+time.sleep(0.5)
+#time.sleep(1.0)        
+
+#print("Taking off")
+#drone.takeoff()                # Drone starts
+#print("Sleeping")
+#time.sleep(5)
+
+
    
    
 # i is the number of the data points to capture for point cloud
-i = 5
+i = 30
 j=0
 
 
@@ -114,12 +175,14 @@ while i > 0:
     
     # reads from terminal what python2 code is for tf mini
     distanceStr = os.popen('./tfminiTEST.py').read()
-
+    #print ("Megnetometer [X,Y,Z]:         "+str(drone.NavData["magneto"][0]))
+    magnetometerData = str(drone.NavData["magneto"][0])
+    mag_x, mag_y, mag_z = magData(magnetometerData)
     
     g = 9.8
     k = 0
     while k < 1:
-        theta, phi = accelData()
+        theta, phi = accelData(mag_x, mag_y, mag_z)
         k = k + 1
         break
     
@@ -135,16 +198,25 @@ while i > 0:
         calculateCoordinates(distance, theta, phi)
   
     i = i - 1
-    
+
 # coordinate of the front of the UAV
-droneTuple = droneLocation(5)
+dist_drone_to_lidar = 5
+magnetometerData = str(drone.NavData["magneto"][0])
+mag_x, mag_y, mag_z = magData(magnetometerData)
+droneTuple = droneLocation(dist_drone_to_lidar, mag_x, mag_y, mag_z)
 
 # way to iterate through list to compare the distances of it to the front of the UAV
 #for i in list:
   #  distBetweenPoints(droneTuple, i)
   
-line_edge(list)
+#line_edge(list)
 
 # plots the points by passing in the list of tuples of coordinates
 plotPoints(list)
 
+
+
+
+#print("Landing")
+#drone.shutdown()                   # Drone lands
+#print("Done")

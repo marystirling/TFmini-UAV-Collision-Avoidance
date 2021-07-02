@@ -72,10 +72,14 @@ def accelData():
     # exception handling to make sure that valid theta and phi arguments are given
     try:
         thetaAcc = math.pi - math.asin(accel_z/g)
-        phiAcc = math.atan(mag_y/mag_x)
+        #phiAcc = math.atan(mag_y/mag_x)
+        phiAcc = math.atan2(mag_y, mag_x)
         return thetaAcc, phiAcc
             
     except ValueError:
+        return 0, 0
+    
+    except ZeroDivisionError:
         return 0, 0
    
    
@@ -119,5 +123,4 @@ for i in list:
 
 # plots the points by passing in the list of tuples of coordinates
 plotPoints(list)
-
-file.close()                         
+                     

@@ -35,6 +35,7 @@ drone.takeoff()                # Drone starts
 print("Sleeping")
 time.sleep(5)
 
+
 #drone.moveForward()            # Drone flies forward...
 #time.sleep(0.5)                  # ... for two seconds
 #drone.stop()                   # Drone stops...
@@ -58,3 +59,17 @@ time.sleep(5)
 print("Landing")
 drone.shutdown()                   # Drone lands
 print("Done")
+
+NDC = drone.NavDataCount
+end = False
+while not end:
+    while drone.NavDataCount == NDC:  time.sleep(0.001)                       # Wait until next time-unit
+    if drone.getKey():
+        end = True                              # Stop if any key is pressed
+        NDC=drone.NavDataCount
+        print("-----------")
+    #print "Aptitude [X,Y,Z] :            "+str(drone.NavData["demo"][2])
+    #print "Altitude / sensor / pressure: "+str(drone.NavData["altitude"][3])+" / "+str(drone.State[21])+" / "+str(drone.NavData["pressure_raw"][0])
+        print("Megnetometer [X,Y,Z]:         "+str(drone.NavData["magneto"][0]))
+    #print "Wifi link quality:            "+str(drone.NavData["wifi"])
+        magData = drone.NavData["magneto"][0]
