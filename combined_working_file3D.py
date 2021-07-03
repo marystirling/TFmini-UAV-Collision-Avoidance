@@ -91,7 +91,7 @@ def calculateCoordinates(dist, theta, phi):
 # plots Cartesian coordinates in matplotlib 3D scatterplot to visualize point cloud
 def plotPoints(list):
     x, y, z = zip(*list)
-    plt.scatter(x, y, marker='o', s=5)
+    ax.scatter(x, y, z, marker='o', s=5)
     plt.savefig('3d_plot.png')
     plt.show()
 
@@ -101,6 +101,7 @@ def magData(magnetometerData):
     magnetometerData = magnetometerData[1:-1]
     #print(magnetometerData)
     x, y, z = magnetometerData.split(', ')
+    print(x,",",y,",",z)
     #print(x, y, z)
     return x, y, z
     
@@ -169,7 +170,7 @@ time.sleep(0.5)
    
    
 # i is the number of the data points to capture for point cloud
-i = 150
+i = 100
 j=0
 
 

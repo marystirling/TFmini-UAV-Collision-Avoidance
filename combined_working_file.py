@@ -167,7 +167,7 @@ time.sleep(0.5)
    
    
 # i is the number of the data points to capture for point cloud
-i = 30
+i = 300
 j=0
 
 

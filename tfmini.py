@@ -21,7 +21,7 @@ def getTFminiData():
                 #print(distance)
                 print(distance)
                 #print('{}'.format(distance))
-                break
+                #break
                     # time.sleep(3)
                 # time.sleep(1.5)
                 
