@@ -92,23 +92,15 @@ def plotPoints(list):
     plt.savefig('3d_plot.png')
     plt.show()
 
-numbers = []
 def magData(magnetometerData):
    #distSplit = distanceStr.split("\n")[0]
-    print("mag data: ", magnetometerData)
+    #print("mag data: ", magnetometerData)
     magnetometerData = magnetometerData[1:-1]
-    print(magnetometerData)
+    #print(magnetometerData)
     x, y, z = magnetometerData.split(', ')
-    print(x, y, z)
+    #print(x, y, z)
     return x, y, z
     
-   #for t in magnetometerData.split():
-    #    try:
-     #       numbers.append(float(t))
-      #      print("mag data pt 2: ", t)
-       # except ValueError:
-        #    pass
-
 
 # uses measurements of the acceleration and magnetometers arrays to return the values of theta and phi
 def accelData(mag_x, mag_y, mag_z):

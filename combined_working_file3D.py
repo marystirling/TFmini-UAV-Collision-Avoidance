@@ -22,8 +22,8 @@ i2c = busio.I2C(board.SCL, board.SDA)
 mag = adafruit_lsm303dlh_mag.LSM303DLH_Mag(i2c)
 accel = adafruit_lsm303_accel.LSM303_Accel(i2c)
 
-# creates a list
-list = []
+# creates a coordinates
+coordinates = []
 
 # min distance that the UAV can fly through
 marginDist = 20
@@ -36,23 +36,108 @@ ax.set_ylabel('y-axis')
 ax.set_zlabel('z-axis')
 
 
+# angleY is left/right angle, z is up/down angle (in degrees)
+def get_search_area(distance, angleY, angleZ, position):
+    '''returns a list of the four corner coordinates of the projected rectangle 
+    based on the current position, horizontal and vertical fields of view, and 
+    set distance away'''
+    
+    # orients from North to East for the polar plane, and converts inputed angle
+    # from degrees into radians
+    angleY, angleZ = angleY/2, angleZ/2
+    angleY, angleZ = 90-angleY, 90-angleZ
+    angleY, angleZ = angleY*(math.pi)/180, angleZ*(math.pi)/180
+    
+    # converts from polar into cartesian
+    left  = distance * math.cos(angleY) * -1
+    right = distance * math.cos(angleY)
+    up    = distance * math.sin(-1*angleZ)
+    down  = distance * math.sin(angleZ)
+    
+    # creates list of the corner points, and orients rectangle to current position
+    area = [(-distance, left, up), (-distance, left, down), (-distance, right, up), (-distance, right, down)] 
+    area = [(position[0]+point[0], position[1]+point[1], position[2]+point[2] ) for point in area]
+    
+    # plots points of the projected rectangle for visualization
+    for point in area:
+        ax.scatter(point[0], point[1], point[2], color='#2ca02c')
+    
+    return area
 
+
+def get_plane(a, b, c):
+    '''given three coordinates, returns [p, q, r, -d] of px+qy+rz=d plane equation.'''
+    ab = (a[0]-b[0], a[1]-b[1], a[2]-b[2])
+    ac = (a[0]-c[0], a[1]-c[1], a[2]-c[2])
+    cross = list(np.cross(ab, ac))
+    cross.append(a[0]*cross[0] + a[1]*cross[1] + a[2]*cross[2])
+    return cross
+
+
+def run_equation(point, plane):
+    '''returns the dot product of the normal vector to the plane and a separate point'''
+    result = point[0]*plane[0] + point[1]*plane[1] + point[2]*plane[2] - plane[3]
+    print('  ', result)
+    return result
+
+
+def search_area(position, area, space):
+    '''given an area to search of the enclosed 3D-shape of the area and points, checks
+    each point in the global space area is inside of the space'''
+    
+    # breaks area space into coordinates - upper left, bottom left, upper right, bottom right
+    ul, bl, ur, br = area[0], area[1], area[2], area[3]
+    
+    # finds the equation of the plane for each side of the enclosed shape
+    left = get_plane(position, ul, bl)
+    right = get_plane(position, ur, br)
+    top = get_plane(position, ul, ur)
+    bottom = get_plane(position, bl, br)
+    back = get_plane(ul, bl, ur)
+    
+    # prints the p,q,r data of each plane equation
+    print('planes:')
+    print(left)
+    print(right)
+    print(top)
+    print(bottom)
+    print(back)
+    print()
+    
+    # checks the points in the space-system to see if inside the enclosed shape
+    for point in space:
+        print('Point :', point)
+        if (run_equation(point, bottom) > 0):
+            continue
+        if (run_equation(point, top) < 0):
+            continue
+        if (run_equation(point, left) > 0):
+            continue
+        if (run_equation(point, right) < 0):
+            continue
+        if (run_equation(point, back) < 0):
+            continue
+        print('the point detected in search area is ', point)
+        ax.scatter(point[0], point[1], point[2], color='red', alpha=0.5)
+        return True
+    
+    return False
 
 
 #currdist = dist
 # if(currdist < tooClose):
     #return True
 def distTooClose():
-    line_edge(coordinateList) 
+    line_edge(coordinatecoordinates) 
 
-# compares every element in a list with one another to see if they are in the danger marginDist (where the UAV could not fit through)
-def line_edge(coordinateList):
+# compares every element in a coordinates with one another to see if they are in the danger marginDist (where the UAV could not fit through)
+def line_edge(coordinatecoordinates):
     j = 0
-    # iterates through each tuple in the list and compares it to every other tuple in the same list
-    # every tuple is compared to all the other tuples in the list
-    for aTuple in coordinateList:
+    # iterates through each tuple in the coordinates and compares it to every other tuple in the same coordinates
+    # every tuple is compared to all the other tuples in the coordinates
+    for aTuple in coordinatecoordinates:
         print("comparisons with ", aTuple)
-        for otherTuples in coordinateList:
+        for otherTuples in coordinatecoordinates:
             dist = distBetweenPoints(aTuple, otherTuples)
             print(j)
             j = j + 1
@@ -69,28 +154,28 @@ def distBetweenPoints(tuple1, tuple2):
 
 
 # calculates the location of the UAV coordinate by passing in the distance from the lidar to the front of the UAV
-def droneLocation(dist, mag_x, mag_y, mag_z):
+def droneLocation(dist, mag_x, mag_y, mag_z, alt):
     theta, phi = accelData(mag_x, mag_y, mag_z)
     x = dist * math.cos((math.pi/2)-phi)
     y = dist * math.sin((math.pi/2) - phi)
     z = dist * math.sin(theta)
-    droneTuple = (x, y, z)
+    droneTuple = (x, y, alt)
     #print(droneTuple)
     return droneTuple
 
 # converts the data from lidar and accelerometer/magnatometer to Catrtesian coordinates
-def calculateCoordinates(dist, theta, phi):
+def calculateCoordinates(dist, theta, phi, alt):
     x = dist * math.cos((math.pi/2)-phi)
     y = dist * math.sin((math.pi/2) - phi)
     z = dist * math.sin(theta)
-    tuple = (x, y, z)
+    tuple = (x, y, alt)
     #print(tuple)
-    # adds each tuple (aka coordinates) to the list
-    list.append(tuple)
+    # adds each tuple (aka coordinates) to the coordinates
+    coordinates.append(tuple)
 
 # plots Cartesian coordinates in matplotlib 3D scatterplot to visualize point cloud
-def plotPoints(list):
-    x, y, z = zip(*list)
+def plotPoints(coordinates):
+    x, y, z = zip(*coordinates)
     ax.scatter(x, y, z, marker='o', s=5)
     plt.savefig('3d_plot.png')
     plt.show()
@@ -105,12 +190,6 @@ def magData(magnetometerData):
     #print(x, y, z)
     return x, y, z
     
-   #for t in magnetometerData.split():
-    #    try:
-     #       numbers.append(float(t))
-      #      print("mag data pt 2: ", t)
-       # except ValueError:
-        #    pass
 
 
 # uses measurements of the acceleration and magnetometers arrays to return the values of theta and phi
@@ -170,9 +249,11 @@ time.sleep(0.5)
    
    
 # i is the number of the data points to capture for point cloud
-i = 100
+i = 30
 j=0
 
+altitudeStr = str(drone.NavData["altitude"][3])
+altitude = float(altitudeStr)
 
 while i > 0:
     
@@ -198,7 +279,7 @@ while i > 0:
         #exception handling for when there is no acc[1] when no value is captured for phi
         print(j)
         j = j + 1
-        calculateCoordinates(distance, theta, phi)
+        calculateCoordinates(distance, theta, phi, altitude)
   
     i = i - 1
 
@@ -206,16 +287,48 @@ while i > 0:
 dist_drone_to_lidar = 5
 magnetometerData = str(drone.NavData["magneto"][0])
 mag_x, mag_y, mag_z = magData(magnetometerData)
-droneTuple = droneLocation(dist_drone_to_lidar, mag_x, mag_y, mag_z)
 
-# way to iterate through list to compare the distances of it to the front of the UAV
-#for i in list:
+
+
+currPos = droneLocation(dist_drone_to_lidar, mag_x, mag_y, mag_z, altitude)
+print("drone pos ",currPos)
+
+#plotting the current position of the drone
+ax.scatter(currPos[0], currPos[1], currPos[2])
+
+
+# square_root(2) for distance, 90 degree horizontal and vertical view)
+area = get_search_area(500, 90, 90, currPos)
+
+
+
+print()
+print('area to search:', area)
+print()
+
+draw_rectangle = [area[0], area[1], area[3], area[2], area[0], currPos, area[1], area[0], currPos, area[3]]
+x_rect = [x for (x, y, z) in draw_rectangle]
+y_rect = [y for (x, y, z) in draw_rectangle]
+z_rect = [z for (x, y, z) in draw_rectangle]
+
+plt.plot(x_rect, y_rect, z_rect)
+plt.savefig('visualization.jpg')
+
+print("drone location: ",currPos)
+for point in coordinates:
+    print(point)
+print(search_area(currPos, area, coordinates))
+
+
+
+# way to iterate through coordinates to compare the distances of it to the front of the UAV
+#for i in coordinates:
   #  distBetweenPoints(droneTuple, i)
   
-#line_edge(list)
+#line_edge(coordinates)
 
-# plots the points by passing in the list of tuples of coordinates
-plotPoints(list)
+# plots the points by passing in the coordinates of tuples of coordinates
+plotPoints(coordinates)
 
 
 

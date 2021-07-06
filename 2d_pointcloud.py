@@ -31,7 +31,8 @@ marginDist = 20
 
 
 
-currdist = dist
+#
+#currdist = dist
 # if(currdist < tooClose):
     #return True
 def distTooClose():
@@ -106,7 +107,7 @@ def accelData():
    
    
 # i is the number of the data points to capture for point cloud
-i = 5
+i = 100
 j=0
 
 
@@ -143,7 +144,7 @@ droneTuple = droneLocation(5)
 #for i in list:
   #  distBetweenPoints(droneTuple, i)
   
-line_edge(list)
+#line_edge(list)
 
 # plots the points by passing in the list of tuples of coordinates
 plotPoints(list)
